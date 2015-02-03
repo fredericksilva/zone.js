@@ -1,6 +1,6 @@
 'use strict';
 
-describe('Zone', function () {
+fdescribe('Zone', function () {
 
   beforeEach(function () {
     zone.mark = 'root';
@@ -9,8 +9,9 @@ describe('Zone', function () {
   describe('hooks', function () {
 
     beforeEach(function () {
-      jasmine.Clock.useMock();
+      jasmine.clock().install();
     });
+
 
     it('should fire beforeTask before a zone runs a function', function () {
       var enterSpy = jasmine.createSpy();
@@ -25,6 +26,7 @@ describe('Zone', function () {
       });
     });
 
+
     it('should fire afterTask after a zone runs a function', function () {
       var leaveSpy = jasmine.createSpy();
       var myZone = zone.fork({
@@ -37,6 +39,7 @@ describe('Zone', function () {
 
       expect(leaveSpy).toHaveBeenCalled();
     });
+
 
     it('should fire onZoneCreated when a zone is forked', function () {
       var createdSpy = jasmine.createSpy();
@@ -79,6 +82,7 @@ describe('Zone', function () {
       }).toThrow();
     });
 
+
     it('should fire onError if a function run by a zone throws', function () {
       var errorSpy = jasmine.createSpy();
       var myZone = zone.fork({
@@ -94,14 +98,12 @@ describe('Zone', function () {
       expect(errorSpy).toHaveBeenCalled();
     });
 
+
     it('should allow you to override alert', function () {
       var spy = jasmine.createSpy();
       var myZone = zone.fork({
         alert: spy
       });
-
-      //alert('foo');
-      //expect(spy).not.toHaveBeenCalled();
 
       myZone.run(function () {
         alert('foo');
@@ -110,6 +112,7 @@ describe('Zone', function () {
       expect(spy).toHaveBeenCalled();
     });
   });
+
 
   it('should allow zones to be run from within another zone', function () {
     var a = zone.fork({
@@ -127,6 +130,7 @@ describe('Zone', function () {
     });
     expect(zone.mark).toBe('root');
   });
+
 
   describe('fork', function () {
     it('should fork deep copy', function () {

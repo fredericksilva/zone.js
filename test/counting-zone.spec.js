@@ -1,81 +1,72 @@
 'use strict';
 
 describe('Zone.countingZone', function () {
-  var flushSpy, countingZone;
+  function makeCountingZone() {
+    return zone.fork(Zone.longStackTraceZone).
+                fork(Zone.countingZone);
+  }
 
-  beforeEach(function () {
-    flushSpy = jasmine.createSpy('flush');
-    countingZone = zone.fork(Zone.longStackTraceZone).
-                        fork(Zone.countingZone).
-                        fork({
-                          onFlush: flushSpy
-                        });
+  it('should flush at the end of a run', function (done) {
+    makeCountingZone().fork({
+      onFlush: done
+    }).run(function () { });
   });
 
-  it('should flush at the end of a run', function () {
+
+  it('should work with setTimeout', function (done) {
+    var countingZone = makeCountingZone();
     countingZone.run(function () {
-      expect(countingZone.counter()).toBe(0);
-    });
-    expect(countingZone.counter()).toBe(0);
-    expect(flushSpy.calls.length).toBe(1);
-  });
-
-  it('should work with setTimeout', function () {
-    var latch;
-
-    runs(function () {
-      countingZone.run(function () {
-        setTimeout(function () {
-          latch = true;
-        }, 0);
-        expect(countingZone.counter()).toBe(1);
-      });
-    });
-
-    waitsFor(function () {
-      return latch;
-    });
-
-    runs(function () {
-      expect(countingZone.counter()).toBe(0);
-    })
-  });
-
-  it('should work with clearTimeout', function () {
-    var latch = false;
-    countingZone.run(function () {
-      var id = setTimeout(function () {
-        latch = true;
+      setTimeout(function () {
+        expect(countingZone.counter()).toBe(0);
+        done();
       }, 0);
+      expect(countingZone.counter()).toBe(1);
+    });
+  });
+
+
+  it('should work with clearTimeout', function (done) {
+    var countingZone = makeCountingZone();
+
+    makeCountingZone().run(function () {
+      var id = setTimeout(function () {}, 0);
       expect(countingZone.counter()).toBe(1);
       clearTimeout(id);
       expect(countingZone.counter()).toBe(0);
+      done();
     });
   });
 
-  it('should work with setInterval', function () {
-    var latch = 0, id;
 
-    runs(function () {
-      countingZone.run(function () {
-        id = setInterval(function () {
-          latch += 1;
-        }, 0);
-        expect(countingZone.counter()).toBe(1);
-      });
+  it('should work with setInterval', function (done) {
+    var latch = 0,
+        countingZone = makeCountingZone(),
+        id;
+
+    countingZone.run(function () {
+      expect(countingZone.counter()).toBe(0);
+
+      id = setInterval(function () {
+        latch += 1;
+
+        // setInterval should run multiple times
+        if (latch === 2) {
+          finish();
+        }
+      }, 0);
+
+      expect(countingZone.counter()).toBe(1);
     });
 
-    waitsFor(function () {
-      return latch === 2;
-    }, 100, 'latch to increment');
-
-    runs(function () {
+    function finish() {
       expect(countingZone.counter()).toBe(1);
       clearInterval(id);
-    });
+      done();
+    }
   });
 
-  it('should work with clearInterval', function () {
+
+  it('should work with clearInterval', function (done) {
     var id;
     countingZone.run(function () {
       id = setInterval(function () {
@@ -84,16 +75,15 @@ describe('Zone.countingZone', function () {
       expect(countingZone.counter()).toBe(1);
       clearInterval(id);
       expect(countingZone.counter()).toBe(0);
+      done();
     });
   });
 
-  it('should work with addEventListener', function () {
-    var elt = document.createElement('button');
-    var clicked = false;
 
-    runs(function () {
-      countingZone.run(main);
-    });
+  it('should work with addEventListener', function (done) {
+    var elt = document.createElement('button');
+    expect(countingZone.counter()).toBe(0);
+    countingZone.run(main);
 
     function main () {
       expect(countingZone.counter()).toBe(0);
@@ -105,19 +95,12 @@ describe('Zone.countingZone', function () {
         expect(countingZone.counter()).toBe(1);
         elt.removeEventListener('click', onClick);
         expect(countingZone.counter()).toBe(0);
+
+        done();
         clicked = true;
       }
 
       expect(countingZone.counter()).toBe(0);
     }
-
-    waitsFor(function () {
-      return clicked;
-    }, 10, 'the thing');
-
-    runs(function () {
-      expect(flushSpy.calls.length).toBe(1);
-    });
-
   });
 });
