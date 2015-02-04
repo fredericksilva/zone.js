@@ -1,17 +1,12 @@
 'use strict';
 
-fdescribe('Zone', function () {
+describe('Zone', function () {
 
   beforeEach(function () {
     zone.mark = 'root';
   });
 
   describe('hooks', function () {
-
-    beforeEach(function () {
-      jasmine.clock().install();
-    });
-
 
     it('should fire beforeTask before a zone runs a function', function () {
       var enterSpy = jasmine.createSpy();
@@ -41,7 +36,7 @@ fdescribe('Zone', function () {
     });
 
 
-    it('should fire onZoneCreated when a zone is forked', function () {
+    it('should fire onZoneCreated when a zone is forked', function (done) {
       var createdSpy = jasmine.createSpy();
       var counter = 0;
       var myZone = zone.fork({
@@ -57,21 +52,15 @@ fdescribe('Zone', function () {
 
         expect(counter).toBe(0);
 
-        setTimeout(function () {
-          expect(counter).toBe(2);
-        }, 0);
+        setTimeout(function () {}, 0);
         expect(counter).toBe(1);
 
         setTimeout(function () {
+          expect(counter).toBe(0);
+          setTimeout(done, 5);
           expect(counter).toBe(1);
-          setTimeout(function () {}, 0);
-          expect(counter).toBe(2);
         }, 0);
         expect(counter).toBe(2);
-
-        jasmine.Clock.tick(1);
-
-        expect(counter).toBe(0);
       });
     });
 

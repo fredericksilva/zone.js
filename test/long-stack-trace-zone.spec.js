@@ -1,6 +1,6 @@
 'use strict';
 
-describe('longStackTraceZone', function () {
+fdescribe('longStackTraceZone', function () {
   var log;
 
   var lstz = zone.fork(Zone.longStackTraceZone).fork({
@@ -11,7 +11,7 @@ describe('longStackTraceZone', function () {
 
   beforeEach(function () {
     log = [];
-    jasmine.Clock.useMock();
+    jasmine.clock().install();
   });
 
   it('should produce long stack traces', function () {
@@ -21,9 +21,9 @@ describe('longStackTraceZone', function () {
           throw new Error('hello');
         }, 0);
       }, 0);
-    });
+    }); 
 
-    jasmine.Clock.tick(0);
+    jasmine.clock().tick(0);
 
     expect(log[0]).toBe('Error: hello');
     expect(log[1].split('--- ').length).toBe(4);
@@ -43,7 +43,7 @@ describe('longStackTraceZone', function () {
       }, 0);
     });
 
-    jasmine.Clock.tick(0);
+    jasmine.clock().tick(0);
     expect(log[1]).not.toContain('jasmine.js');
   });
 });
